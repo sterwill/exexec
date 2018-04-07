@@ -220,4 +220,19 @@ defmodule Exexec do
   """
   @spec which_children() :: [os_pid]
   defdelegate which_children(), to: :exec
+
+  @doc """
+  Pause or unpause the handling of `stream` for the OS process identified by `pid`.
+
+  When a stream is paused, no data is read from or written to it.  For
+  `:stdout` and `:stderr`, the process will block when the operating system's
+  buffer fills up, and unblock when the stream is unpaused.  For `:stdin`,
+  data sent to the process will be queued in memory until the stream is unpaused
+  (this is rarely useful; it is better to simply not send the data).
+
+  Data that is queued while a stream is paused will be lost if the process exits
+  before the stream is unpaused.
+  """
+  @spec pause(pid | os_pid, :stdin | :stdout | :stderr, boolean) :: :ok
+  defdelegate pause(pid, stream, paused), to: :exec
 end

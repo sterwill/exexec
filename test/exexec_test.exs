@@ -146,4 +146,24 @@ defmodule ExexecTest do
 
     assert which_children == [sleep_os_pid]
   end
+
+  test "pause" do
+    bash = System.find_executable("bash")
+    {:ok, pid, os_pid} = run([bash, "-c" ,"echo started; read x ; echo ok; read x"], stdin: true, stdout: true, stderr: true)
+    assert_receive({:stdout, ^os_pid, "started\n"}, 3000)
+
+    # Pause stdout before continuing
+    assert :ok = Exexec.pause(pid, :stdout, true)
+    assert :ok = Exexec.send(pid, "\n")
+
+    # Expect no stdout data while stdout paused
+    refute_receive({:stdout, ^os_pid, _}, 1000)
+
+    # Unpause stdout and we should receive the queued data
+    assert :ok = Exexec.pause(pid, :stdout, false)
+    assert_receive({:stdout, ^os_pid, "ok\n"}, 3000)
+
+    # Let the script finish
+    assert :ok = Exexec.send(pid, "\n")
+  end
 end
